@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useEffectEvent, useState } from 'react';
+import { Dispatch, SetStateAction, useEffectEvent, useMemo, useState } from 'react';
 
 /**
  * This hook creates a Derived State from propsState while avoiding the Cascading Updates Issue.
@@ -13,13 +13,14 @@ import { Dispatch, SetStateAction, useEffectEvent, useState } from 'react';
  * @returns the exact same output as useState: [state, setState], where state is the derived state from the propsState
  */
 export function useDeriveState<T>(propsState: T) {
-    const [state, setState] = useState({ props: propsState, value: propsState });
+    const propsId = useMemo(() => ({}), [propsState]);
+    const [state, setState] = useState({ propsId, value: propsState });
 
-    const derivedState = state.props === propsState ? state.value : propsState;
+    const derivedState = state.propsId === propsId ? state.value : propsState;
 
     const setDerivedState = useEffectEvent((value: SetStateAction<T>) => {
         const newValue = value instanceof Function ? value(derivedState) : value;
-        setState(prev => derivedState !== newValue ? { props: propsState, value: newValue } : prev)
+        setState(prev => derivedState !== newValue ? { propsId, value: newValue } : prev)
     })
 
     return [derivedState, setDerivedState] as [T, Dispatch<SetStateAction<T>>];
